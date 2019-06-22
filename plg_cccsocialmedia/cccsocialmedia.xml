@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" version="3.8" group="system" method="upgrade">
+	<name>PLG_CCCSOCIALMEDIA</name>
+	<creationDate>22.06.18</creationDate>
+	<author>coolcat-creations.com - Elisa Foltyn</author>
+	<authorEmail>mail@coolcat-creations.com</authorEmail>
+	<authorUrl>http://www.coolcat-creations.com</authorUrl>
+	<copyright>coolcat-creations.com</copyright>
+	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
+	<version>1.0.0</version>
+	<description>PLG_CCCSOCIALMEDIA_XML_DESCRIPTION</description>
+
+	<!-- Language files -->
+	<languages folder="language">
+		<language tag="de-DE">de-DE/de-DE.plg_system_cccsocialmedia.ini</language>
+		<language tag="de-DE">de-DE/de-DE.plg_system_cccsocialmedia.sys.ini</language>
+		<language tag="en-GB">en-GB/en-GB.plg_system_cccsocialmedia.ini</language>
+		<language tag="en-GB">en-GB/en-GB.plg_system_cccsocialmedia.sys.ini</language>
+	</languages>
+
+	<!-- Plugin files -->
+	<files>
+		<filename plugin="cccsocialmedia">cccsocialmedia.php</filename>
+		<folder>language</folder>
+		<folder>forms</folder>
+	</files>
+
+	<!-- Config parameter -->
+	<config>
+
+		<fields name="options">
+
+		</fields>
+
+		<fields name="params">
+			<fieldset name="socialmedia" label="PLG_SYSTEM_CCCSOCIALMEDIA">
+
+				<field type="spacer" name="donationcode"
+				       label="PLG_SYSTEM_CCCSOCIALMEDIA_DONATE"
+				       showon="hidemessages:0"
+				/>
+
+				<field name="hidemessages" type="radio" default="0"
+				       label="PLG_SYSTEM_CCCSOCIALMEDIA_HIDE_MESSAGES"
+				>
+					<option value="1">JYES</option>
+					<option value="0">JNO</option>
+				</field>
+
+				<fieldgroup
+				>
+					<field name="og" type="spacer" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG"
+					/>
+
+					<field name="fb_app_id" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_FB_APP_ID_TITLE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_FB_APP_ID_DESC"
+					       hint="PLG_SYSTEM_CCCSOCIALMEDIA_FB_APP_ID_HINT"
+					/>
+
+					<field name="og_type" type="list" default="article"
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_TYPE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_TYPE_DESC"
+					>
+						<option value="article">PLG_SYSTEM_CCCSOCIALMEDIA_ARTICLE</option>
+						<option value="product">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT</option>
+						<option value="book">PLG_SYSTEM_CCCSOCIALMEDIA_BOOK</option>
+						<option value="profile">PLG_SYSTEM_CCCSOCIALMEDIA_PROFILE</option>
+						<option value="website">PLG_SYSTEM_CCCSOCIALMEDIA_WEBSITE</option>
+						<option value="video.movie">PLG_SYSTEM_CCCSOCIALMEDIA_VIDEO_MOVIE</option>
+						<option value="video.episode">PLG_SYSTEM_CCCSOCIALMEDIA_VIDEO_EPISODE</option>
+						<option value="video.tvshow">PLG_SYSTEM_CCCSOCIALMEDIA_VIDEO_TVSHOW</option>
+						<option value="video.other">PLG_SYSTEM_CCCSOCIALMEDIA_VIDEO_OTHER</option>
+						<option value="music.song">PLG_SYSTEM_CCCSOCIALMEDIA_MUSIC_SONG</option>
+						<option value="music.album">PLG_SYSTEM_CCCSOCIALMEDIA_MUSIC_SONG</option>
+						<option value="music.playlist">PLG_SYSTEM_CCCSOCIALMEDIA_MUSIC_PLAYLIST</option>
+						<option value="music.radio_station">PLG_SYSTEM_CCCSOCIALMEDIA_MUSIC_RADIOSTATION</option>
+					</field>
+
+
+					<field name="og_product_price_amount" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_PRODUCT_PRICE_AMOUNT"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_PRODUCT_PRICE_AMOUNT_DESC"
+					       showon="og_type:product"
+					/>
+
+					<field name="og_product_price_currency" type="text" default="EUR"
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_PRODUCT_PRICE_CURRENCY"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_PRODUCT_PRICE_CURRENCY_DESC"
+					       showon="og_type:product"
+					/>
+
+					<field name="og_product_availability" type="list" default="instock"
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_PRODUCT_AVAILABILITY"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_PRODUCT_AVAILABILITY_DESC"
+					       showon="og_type:product"
+					>
+
+						<option value="instock">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT_INSTOCK</option>
+						<option value="preorder">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT_PREORDER</option>
+						<option value="backorder">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT_BACKORDER</option>
+						<option value="pending">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT_PENDING</option>
+						<option value="out of stock">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT_OUTOFSTOCK</option>
+					</field>
+
+					<meta property="product:price:amount" content="98.00" />
+					<meta property="product:price:currency" content="USD" />
+					<meta property="og:availability" content="instock" />
+
+					<field name="og_article_published_time" type="calendar" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_ARTICLE_PUBLISHED_TIME"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_ARTICLE_PUBLISHED_TIME_DESC"
+					       hint="PLG_SYSTEM_CCCSOCIALMEDIA_OG_ARTICLE_PUBLISHED_TIME_HINT"
+					       showon="og_type:article"
+					/>
+
+					<field name="og_article_author" type="text"
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_ARTICLE_AUTHOR"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_ARTICLE_AUTHOR_DESC"
+					       showon="og_type:article"
+					/>
+
+					<field name="og_title" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_TITLE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_TITLE_DESC"
+					       hint="PLG_SYSTEM_CCCSOCIALMEDIA_OG_TITLE_HINT"
+					/>
+
+					<field name="og_description" type="textarea" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_DESC"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_DESC_DESC"
+					       hint="PLG_SYSTEM_CCCSOCIALMEDIA_OG_DESC_HINT"
+					/>
+
+					<field name="gbhelp" type="spacer" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_GB_HELP"
+					       class="text"
+					       showon="hidemessages:0"
+					/>
+
+					<field name="og_image" type="media" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_IMAGE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_IMAGE_DESC"
+					/>
+
+					<field name="fbhelp" type="spacer" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_FB_HELP"
+					       class="text"
+					       showon="hidemessages:0"
+					/>
+
+					<field name="og_image_fb" type="media" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_FB_IMAGE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_FB_IMAGE_DESC"
+					/>
+
+					<field name="pihelp" type="spacer" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_PI_HELP"
+					       class="text"
+					       showon="hidemessages:0"
+					/>
+
+					<field name="og_image_pi" type="media" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_PI_IMAGE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_PI_IMAGE_DESC"
+					/>
+
+					<field name="og_image_alt" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_IMAGE_ALT"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_IMAGE_ALT_DESC"
+					/>
+
+				</fieldgroup>
+
+				<fieldgroup>
+					<field name="tw" type="spacer" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW"
+					/>
+
+
+
+					<field type="list" name="tw_type" default="summary"
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_TYPE_LABEL"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_TYPE_DESC"
+
+					>
+						<option value="summary">PLG_SYSTEM_CCCSOCIALMEDIA_TW_TYPE_SUMMARY</option>
+						<option value="summary_large_image">PLG_SYSTEM_CCCSOCIALMEDIA_TW_TYPE_SUMMARY_LARGE_IMAGE</option>
+						<option value="app">PLG_SYSTEM_CCCSOCIALMEDIA_TW_TYPE_CARD_APP</option>
+						<option value="player">PLG_SYSTEM_CCCSOCIALMEDIA_TW_TYPE_PLAYER</option>
+					</field>
+
+					<field name="tw_title" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_TITLE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_TITLE_DESC"
+					/>
+
+
+					<field name="tw_site" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_SITE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_SITE_DESC"
+					/>
+
+					<field name="tw_creator" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_CREATOR"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_CREATOR_DESC"
+					       showon="tw_type:summary_large_image"
+					/>
+
+					<field name="tw_player" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_PLAYER"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_PLAYER_DESC"
+					       showon="tw_type:player"
+					/>
+
+					<field name="tw_player_width" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_PLAYER_WIDTH"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_PLAYER_WIDTH_DESC"
+					       showon="tw_type:player"
+					/>
+
+					<field name="tw_player_height" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_PLAYER_HEIGHT"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_PLAYER_HEIGHT_DESC"
+					       showon="tw_type:player"
+					/>
+
+					<field name="tw_description" type="textarea" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_DESC"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_DESC_DESC"
+					/>
+
+					<field name="twhelp" type="spacer" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_HELP"
+					       class="text"
+					       showon="hidemessages:0"
+					/>
+
+					<field name="tw_image" type="media" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_IMAGE"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_IMAGE_DESC"
+					/>
+
+					<field name="tw_image_alt" type="text" default=""
+					       label="PLG_SYSTEM_CCCSOCIALMEDIA_TW_IMAGE_ALT"
+					       description="PLG_SYSTEM_CCCSOCIALMEDIA_TW_IMAGE_ALT_DESC"
+					/>
+
+				</fieldgroup>
+			</fieldset>
+		</fields>
+	</config>
+
+	<updateservers>
+		<server type="extension" name="plg_cccsocialmedia Update Site">https://raw.githubusercontent.com/coolcat-creations/plg_cccsocialmedia/master/manifest.xml</server>
+	</updateservers>
+
+
+</extension>
