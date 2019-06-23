@@ -1,5 +1,5 @@
 # plg_cccsocialmedia
-Joomla Plugin to Display Open Graph and Twitter Options in your menu items and articles
+Joomla Plugin to Display Open Graph and Twitter Options in your menu items and articles. The speciality about this plugin is the feature, that it recognizes the user agent and delivers the right open graph image to the various plattforms, as well as th e many fallback options to make sure anything is filled in the og data.
 
 This plugin creates a new tab in your menu items and your articles and enables you to add open graph and twitter data to your page. You can also set up global and/or fallback options in you plugin parameters.
 
