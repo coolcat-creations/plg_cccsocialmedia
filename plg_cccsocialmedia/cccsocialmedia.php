@@ -340,7 +340,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 					if ($view == 'category') {
 
 						if ($document->description) {
-							$this->og_description = $document->description;
+							$this->tw_description = $document->description;
 						}
 
 						if ($menu->params['page_description']) {
@@ -351,7 +351,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 						}
 					} else {
 						if ($document->description) {
-							$this->og_description = $document->description;
+							$this->tw_description = $document->description;
 						}
 					}
 
