@@ -7,7 +7,7 @@
 	<authorUrl>http://www.coolcat-creations.com</authorUrl>
 	<copyright>coolcat-creations.com</copyright>
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<description>PLG_CCCSOCIALMEDIA_XML_DESCRIPTION</description>
 
 	<!-- Language files -->
@@ -16,6 +16,8 @@
 		<language tag="de-DE">de-DE/de-DE.plg_system_cccsocialmedia.sys.ini</language>
 		<language tag="en-GB">en-GB/en-GB.plg_system_cccsocialmedia.ini</language>
 		<language tag="en-GB">en-GB/en-GB.plg_system_cccsocialmedia.sys.ini</language>
+		<language tag="fr-FR">fr-FR/fr-FR.plg_system_cccsocialmedia.ini</language>
+		<language tag="fr-FR">fr-FR/fr-FR.plg_system_cccsocialmedia.sys.ini</language>
 	</languages>
 
 	<!-- Plugin files -->

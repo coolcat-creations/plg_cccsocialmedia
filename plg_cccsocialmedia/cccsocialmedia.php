@@ -228,8 +228,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 				// Creating Fallbacks
 
 				// if articleIntro Image exist take this one
-
-
+				
 				// if any of the og Images are empty create a Fallback to the articleIntro Image
 
 				if ($view == 'article') {
