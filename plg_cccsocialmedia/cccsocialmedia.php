@@ -64,7 +64,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 
 			case 'com_menus':
 				{
-					if ($app->isAdmin()) {
+					if ($app->isClient('administrator')) {
 						JForm::addFormPath(__DIR__ . '/forms');
 						$form->loadFile('cccsocialmedia_menu', false);
 					}
@@ -74,12 +74,12 @@ class plgSystemCccsocialmedia extends CMSPlugin
 
 			case 'com_content':
 				{
-					if ($app->isAdmin()) {
+					if ($app->isClient('administrator')) {
 						JForm::addFormPath(__DIR__ . '/forms');
 						$form->loadFile('cccsocialmedia_article', false);
 					}
 
-					if ($app->isSite()) {
+					if ($app->isClient('site')) {
 						JForm::addFormPath(__DIR__ . '/forms');
 						$form->loadFile('cccsocialmedia_article', false);
 					}
@@ -137,7 +137,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			return true;
 		}
 
-		if ($this->app->isSite()) {
+		if ($this->app->isClient('site')) {
 
 			$app = Factory::getApplication();
 			$menu = $app->getMenu();
@@ -228,7 +228,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 				// Creating Fallbacks
 
 				// if articleIntro Image exist take this one
-				
+
 				// if any of the og Images are empty create a Fallback to the articleIntro Image
 
 				if ($view == 'article') {
