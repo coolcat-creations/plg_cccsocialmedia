@@ -201,27 +201,37 @@ class plgSystemCccsocialmedia extends CMSPlugin
 
 				foreach ($mySocialMediaSettings as $mySocialMediaSetting) {
 
-					// if global plugin params exist - priority C
-
+					$empty = true;
+					
 					if (!empty($this->params->get($mySocialMediaSetting))) {
 						$this->{$mySocialMediaSetting} = $this->params->get($mySocialMediaSetting);
-					} // if article params exist - priority B
+						$empty = false;
 
-					elseif (!empty($articleAttribs[$mySocialMediaSetting])) {
+					}
+
+					// if article params exist - priority B
+
+					if (!empty($articleAttribs[$mySocialMediaSetting])) {
 						$this->{$mySocialMediaSetting} = $articleAttribs[$mySocialMediaSetting];
-					} // if menu params exist - priority A
+//						echo $this->{$mySocialMediaSetting};
+						$empty = false;
 
-					elseif (!empty($menuParams->$mySocialMediaSetting)) {
+					}
+
+					// if menu params exist - priority A
+
+					if (!empty($menuParams->$mySocialMediaSetting)) {
 						$this->{$mySocialMediaSetting} = $menuParams->$mySocialMediaSetting;
+						$empty = false;
 
-					} else {
+					}
+					if ($empty) {
 						$this->{$mySocialMediaSetting} = false;
-
 					}
 
 					// Testing the parameters
 					// echo $mySocialMediaSetting . '  ' . $this->{$mySocialMediaSetting} . '<br>';
-
+					
 				}
 
 
