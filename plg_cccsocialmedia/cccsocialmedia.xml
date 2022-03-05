@@ -7,7 +7,7 @@
 	<authorUrl>http://www.coolcat-creations.com</authorUrl>
 	<copyright>coolcat-creations.com</copyright>
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
-	<version>1.0.1</version>
+	<version>__DEPLOY_VERSION__</version>
 	<description>PLG_CCCSOCIALMEDIA_XML_DESCRIPTION</description>
 
 	<!-- Language files -->
