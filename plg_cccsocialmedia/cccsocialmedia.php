@@ -118,8 +118,8 @@ class plgSystemCccsocialmedia extends CMSPlugin
 
 		if ($this->app->input->get('option') === 'com_content')
 		{
-			$attribs        = json_decode($table->attribs, true);
-			$table->attribs = json_encode($attribs);
+			$attribs = json_decode($table->attribs ?? '{}', true);
+			$table->set('attribs', json_encode($attribs));
 		}
 
 		return true;
