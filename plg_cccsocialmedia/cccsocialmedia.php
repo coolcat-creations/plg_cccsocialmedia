@@ -27,10 +27,10 @@ defined('_JEXEC') or die;
  */
 class plgSystemCccsocialmedia extends CMSPlugin
 {
-	private const GOOGLE    = 'google';
-	private const FACEBOOK  = 'facebook';
-	private const PINTEREST = 'pinterest';
-	private const NONE      = '';
+	public const GOOGLE    = 'google';
+	public const FACEBOOK  = 'facebook';
+	public const PINTEREST = 'pinterest';
+	public const NONE      = '';
 
 	/**
 	 * Application object
@@ -157,14 +157,14 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		$menuParams     = $this->getMenuParams();
 		$articleAttribs = new Registry($article->attribs ?? '{}');
 		$articleImages  = new Registry($article->images ?? '{}');
+		$userAgent      = $this->getBot();
 
 		$this->combineSettings($this->params, $articleAttribs, $menuParams);
-		$this->addImageFallback($this->params, $articleImages, $view);
+		$this->addImageFallback($this->params, $articleImages, $view, $userAgent);
 		$this->addTitleFallback($this->params, $articleAttribs, $menuParams, $document);
 		$this->addDescriptionFallback($this->params, $menuParams, $document, $view);
 		$this->addPublishedFallback($this->params, $article);
 
-		$this->injectTwitterData($document, $this->params);
 		$this->injectOpenGraphData($document, $this->params);
 
 		return true;
@@ -231,14 +231,13 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   \Joomla\Registry\Registry  $params
 	 * @param   \Joomla\Registry\Registry  $articleImages
 	 * @param   string                     $view
+	 * @param   string                     $userAgent
 	 *
 	 * @return void
 	 * @since  __DEPLOY_VERSION__
 	 */
-	private function addImageFallback(Registry $params, Registry $articleImages, string $view): void
+	private function addImageFallback(Registry $params, Registry $articleImages, string $view, string $userAgent): void
 	{
-		$userAgent = $this->getBot();
-
 		if ($view !== 'article')
 		{
 			return;
@@ -267,10 +266,10 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			[$image, $alt] = $this->getArticleImage($articleImages);
 		}
 
-		$params->def('og_image', $image);
-		$params->def('og_image_alt', $alt);
-		$params->def('tw_image', $image);
-		$params->def('tw_image_alt', $alt);
+		$params->set('og_image', $image);
+		$params->set('og_image_alt', $alt);
+		$params->set('tw_image', $image);
+		$params->set('tw_image_alt', $alt);
 	}
 
 	/**
@@ -465,7 +464,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 
 		if ($active === null)
 		{
-			return new Joomla\Registry\Registry([]);
+			return new Registry([]);
 		}
 
 		$itemId = $active->id;
@@ -496,11 +495,20 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		}
 
 		$image = preg_replace('~^([\w\-./\\\]+).*$~', '$1', $image);
-		$url   = $baseUrl . $image;
+
+		if (!file_exists($image))
+		{
+			return;
+		}
+
+		$url   = empty($baseUrl) ? '' : rtrim($baseUrl, '/') . '/';
+		$url   .= $image;
 
 		$this->setMetaData($document, 'og:image', $url, 'property');
 		$this->setMetaData($document, 'og:image:secure_url', $url, 'property');
 		$this->setMetaData($document, 'og:image:alt', $alt, 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:image', $url, 'name');
+		$this->setMetaDataIfNotSet($document, 'twitter:image:alt', $alt, 'name');
 
 		$info = getimagesize($image);
 
@@ -510,30 +518,6 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			$this->setMetaData($document, 'og:image:height', $info[1]);
 			$this->setMetaData($document, 'og:image:width', $info[0]);
 		}
-	}
-
-	/**
-	 * @param   \Joomla\CMS\Document\Document  $document
-	 * @param   string|null                    $image
-	 * @param   string|null                    $alt
-	 * @param   string|null                    $baseUrl
-	 *
-	 * @return void
-	 * @since  __DEPLOY_VERSION__
-	 */
-	private function setTwitterImage(
-		Document $document,
-		?string $image = '',
-		?string $alt = '',
-		?string $baseUrl = ''
-	): void {
-		if (empty($image) || !empty($document->getMetaData('twitter:image')))
-		{
-			return;
-		}
-
-		$this->setMetaDataIfNotSet($document, 'twitter:image', $baseUrl . $image, 'name');
-		$this->setMetaDataIfNotSet($document, 'twitter:image:alt', $alt, 'name');
 	}
 
 	/**
@@ -607,48 +591,39 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @return void
 	 * @since  __DEPLOY_VERSION__
 	 */
-	private function injectTwitterData(Document $document, Registry $params): void
-	{
-		$this->setMetaDataIfNotSet($document, 'twitter:card', $params->get('tw_type'), 'name');
-		$this->setMetaDataIfNotSet($document, 'twitter:site', $params->get('tw_site'), 'name');
-		$this->setMetaDataIfNotSet($document, 'twitter:creator', $params->get('tw_creator'), 'name');
-		$this->setMetaDataIfNotSet($document, 'twitter:title', $params->get('tw_title'), 'name');
-		$this->setMetaDataIfNotSet($document, 'twitter:description', $params->get('tw_description'), 'name');
-		$this->setTwitterImage(
-			$document,
-			$params->get('tw_image'),
-			$params->get('tw_image_alt'),
-			$params->get('base_url')
-		);
-	}
-
-	/**
-	 * @param   \Joomla\CMS\Document\Document  $document
-	 * @param   \Joomla\Registry\Registry      $params
-	 *
-	 * @return void
-	 * @since  __DEPLOY_VERSION__
-	 */
 	private function injectOpenGraphData(Document $document, Registry $params): void
 	{
-		$this->setMetaDataIfNotSet($document, 'og:type', $params->get('og_type'), 'property');
-		$this->setMetaData($document, 'og:site_name', $params->get('sitename'), 'property');
 		$this->setMetaData($document, 'og:url', $params->get('url'), 'property');
+
+		$this->setMetaData($document, 'og:site_name', $params->get('sitename'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:site', $params->get('tw_site'), 'name');
+
+		$this->setMetaDataIfNotSet($document, 'og:type', $params->get('og_type'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:card', $params->get('tw_type'), 'name');
+
 		$this->setMetaDataIfNotSet($document, 'og:title', $params->get('og_title'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:title', $params->get('tw_title'), 'name');
+
 		$this->setMetaDataIfNotSet($document, 'og:description', $params->get('og_description'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:description', $params->get('tw_description'), 'name');
+
+		$this->setMetaDataIfNotSet($document, 'article:author', $params->get('og_article_author'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:creator', $params->get('tw_creator'), 'name');
+
 		$this->setMetaDataIfNotSet(
 			$document,
 			'article:published_time',
 			$params->get('og_article_published_time'),
 			'property'
 		);
-		$this->setMetaDataIfNotSet($document, 'article:author', $params->get('og_article_author'), 'property');
+
 		$this->setOpenGraphImage(
 			$document,
 			$params->get('og_image'),
 			$params->get('og_image_alt'),
 			$params->get('base_url')
 		);
+
 		$this->setProduct(
 			$document,
 			$params->get('og_type'),
