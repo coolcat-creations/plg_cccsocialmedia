@@ -10,6 +10,7 @@
 
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Document\Document;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Table\Content;
 use Joomla\CMS\Uri\Uri;
@@ -63,22 +64,19 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	/**
 	 * Add fields for the OpenGraph data to the form
 	 *
-	 * @param   EventInterface  $event  The event
+	 * @param   \Joomla\CMS\Form\Form  $form
 	 *
 	 * @return boolean
 	 * @since  1.0
 	 */
-	public function onContentPrepareForm(EventInterface $event): bool
+	public function onContentPrepareForm(Form $form): bool
 	{
-		/** @var \Joomla\CMS\Form\Form $form */
-		$form = $event->getArgument('0');
-
 		$option = $this->app->input->get('option');
 		$client = $this->app->getName();
 
 		switch ("$option.$client")
 		{
-			case 'com_menus.admin':
+			case 'com_menus.administrator':
 			{
 				$form::addFormPath(__DIR__ . '/forms');
 				$form->loadFile('cccsocialmedia_menu', false);
@@ -86,7 +84,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 				break;
 			}
 
-			case 'com_content.admin':
+			case 'com_content.administrator':
 			case 'com_content.site':
 			{
 				$form::addFormPath(__DIR__ . '/forms');
@@ -94,32 +92,6 @@ class plgSystemCccsocialmedia extends CMSPlugin
 
 				break;
 			}
-		}
-
-		return true;
-	}
-
-	/**
-	 * Clean attributes before getting saved
-	 *
-	 * @param   EventInterface  $event
-	 *
-	 * @return  boolean
-	 * @since  1.0
-	 */
-	public function onContentBeforeSave(EventInterface $event): bool
-	{
-		$table = $event->getArgument('1');
-
-		if (!($table instanceof Content))
-		{
-			return true;
-		}
-
-		if ($this->app->input->get('option') === 'com_content')
-		{
-			$attribs = json_decode($table->attribs ?? '{}', true);
-			$table->set('attribs', json_encode($attribs));
 		}
 
 		return true;
