@@ -10,12 +10,12 @@
 
 use Joomla\CMS\Application\CMSApplication;
 use Joomla\CMS\Document\Document;
+use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Table\Content;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseDriver;
-use Joomla\Event\EventInterface;
 use Joomla\Registry\Registry;
 
 defined('_JEXEC') or die;
@@ -48,7 +48,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 *
 	 * The database is injected by parent constructor
 	 *
-	 * @var    DatabaseDriver
+	 * @var    DatabaseDriver|\JDatabaseDriver
 	 * @since  1.0
 	 */
 	protected $db;
@@ -124,6 +124,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			return true;
 		}
 
+		/** @var \Joomla\CMS\Document\Document $document */
 		$document       = $this->app->getDocument();
 		$article        = $this->getArticle($input->get('id', 0, 'int'));
 		$menuParams     = $this->getMenuParams();
@@ -174,7 +175,14 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			'tw_creator'
 		);
 
-		$params->set('sitename', $this->app->getConfig()->get('sitename'));
+		$config = Factory::getConfig();
+
+		if ($config === null)
+		{
+			throw new \RuntimeException('Unable to load global configuration');
+		}
+
+		$params->set('sitename', $config->get('sitename'));
 		$params->set('base_url', Uri::base());
 		$params->set('url', Uri::getInstance());
 
@@ -398,7 +406,12 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		];
 
 		$bot       = self::NONE;
-		$useragent = $this->app->client->userAgent;
+		$useragent = null;
+
+		if ($_SERVER['HTTP_USER_AGENT'])
+		{
+			$useragent = $_SERVER['HTTP_USER_AGENT'];
+		}
 
 		if (!empty($useragent))
 		{
@@ -432,6 +445,12 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	private function getMenuParams(): Registry
 	{
 		$menu   = $this->app->getMenu();
+
+		if ($menu === null)
+		{
+			return new Registry([]);
+		}
+
 		$active = $menu->getActive();
 
 		if ($active === null)
@@ -473,8 +492,8 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			return;
 		}
 
-		$url   = empty($baseUrl) ? '' : rtrim($baseUrl, '/') . '/';
-		$url   .= $image;
+		$url = empty($baseUrl) ? '' : rtrim($baseUrl, '/') . '/';
+		$url .= $image;
 
 		$this->setMetaData($document, 'og:image', $url, 'property');
 		$this->setMetaData($document, 'og:image:secure_url', $url, 'property');
