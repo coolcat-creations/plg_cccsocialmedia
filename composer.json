@@ -1,0 +1,21 @@
+{
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "joomla/event": "^2.0",
+        "joomla/registry": "^2.0",
+        "joomla/di": "^2.0"
+    },
+    "autoload": {
+        "classmap": [
+            "plg_cccsocialmedia/cccsocialmedia.php"
+        ]
+    },
+    "autoload-dev": {
+        "classmap": [
+            "tests/"
+        ]
+    },
+    "require": {
+        "ext-json": "*"
+    }
+}

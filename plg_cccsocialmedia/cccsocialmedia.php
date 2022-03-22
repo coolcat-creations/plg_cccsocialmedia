@@ -9,10 +9,14 @@
  */
 
 use Joomla\CMS\Application\CMSApplication;
+use Joomla\CMS\Document\Document;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Form\Form;
 use Joomla\CMS\Plugin\CMSPlugin;
+use Joomla\CMS\Table\Content;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseDriver;
+use Joomla\Registry\Registry;
 
 defined('_JEXEC') or die;
 
@@ -24,8 +28,15 @@ defined('_JEXEC') or die;
  */
 class plgSystemCccsocialmedia extends CMSPlugin
 {
+	public const GOOGLE    = 'google';
+	public const FACEBOOK  = 'facebook';
+	public const PINTEREST = 'pinterest';
+	public const NONE      = '';
+
 	/**
 	 * Application object
+	 *
+	 * The application is injected by parent constructor
 	 *
 	 * @var    CMSApplication
 	 * @since  1.0
@@ -35,7 +46,9 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	/**
 	 * Database object
 	 *
-	 * @var    DatabaseDriver
+	 * The database is injected by parent constructor
+	 *
+	 * @var    DatabaseDriver|\JDatabaseDriver
 	 * @since  1.0
 	 */
 	protected $db;
@@ -48,500 +61,566 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 */
 	protected $autoloadLanguage = true;
 
-	function onContentPrepareForm($form, $data)
+	/**
+	 * Add fields for the OpenGraph data to the form
+	 *
+	 * @param   \Joomla\CMS\Form\Form  $form
+	 *
+	 * @return boolean
+	 * @since  1.0
+	 */
+	public function onContentPrepareForm(Form $form): bool
 	{
+		$option = $this->app->input->get('option');
+		$client = $this->app->getName();
 
-		$app = JFactory::getApplication();
-		$option = $app->input->get('option');
+		switch ("$option.$client")
+		{
+			case 'com_menus.administrator':
+			{
+				$form::addFormPath(__DIR__ . '/forms');
+				$form->loadFile('cccsocialmedia_menu', false);
 
+				break;
+			}
 
-		if (!($form instanceof JForm)) {
-			$this->_subject->setError('JERROR_NOT_A_FORM');
-			return false;
+			case 'com_content.administrator':
+			case 'com_content.site':
+			{
+				$form::addFormPath(__DIR__ . '/forms');
+				$form->loadFile('cccsocialmedia_article', false);
+
+				break;
+			}
 		}
 
-		switch ($option) {
-
-			case 'com_menus':
-				{
-					if ($app->isAdmin()) {
-						JForm::addFormPath(__DIR__ . '/forms');
-						$form->loadFile('cccsocialmedia_menu', false);
-					}
-
-					return true;
-				}
-
-			case 'com_content':
-				{
-					if ($app->isAdmin()) {
-						JForm::addFormPath(__DIR__ . '/forms');
-						$form->loadFile('cccsocialmedia_article', false);
-					}
-
-					if ($app->isSite()) {
-						JForm::addFormPath(__DIR__ . '/forms');
-						$form->loadFile('cccsocialmedia_article', false);
-					}
-
-					return true;
-				}
-
-		}
 		return true;
 	}
 
-	public function onContentBeforeSave($context, $article, $isNew)
+	/**
+	 * Prepare the OpenGraph metadata for rendeering
+	 *
+	 * @return bool
+	 * @since  1.0
+	 */
+	public function onBeforeCompileHead(): bool
 	{
-		$app = JFactory::getApplication();
-		$option = $app->input->get('option');
+		$input  = $this->app->input;
+		$option = $input->get('option', '', 'cmd');
+		$view   = $input->get('view', '', 'cmd');
 
-		switch ($option) {
-
-			case 'com_menus':
-				{
-					return true;
-				}
-
-			case 'com_content':
-				{
-					// getting the data from the submitted content
-					$attribs = json_decode($article->attribs);
-
-					$article->attribs = json_encode($attribs);
-
-					return true;
-				}
-
+		if (($option . '.' . $view) === 'com_finder.indexer')
+		{
+			return true;
 		}
 
+		if ($input->get('format', '', 'cmd') === 'feed')
+		{
+			return true;
+		}
+
+		if (!$this->app->isClient('site'))
+		{
+			return true;
+		}
+
+		/** @var \Joomla\CMS\Document\Document $document */
+		$document       = $this->app->getDocument();
+		$article        = $this->getArticle($input->get('id', 0, 'int'));
+		$menuParams     = $this->getMenuParams();
+		$articleAttribs = new Registry($article->attribs ?? '{}');
+		$articleImages  = new Registry($article->images ?? '{}');
+		$userAgent      = $this->getBot();
+
+		$this->combineSettings($this->params, $articleAttribs, $menuParams);
+		$this->addImageFallback($this->params, $articleImages, $view, $userAgent);
+		$this->addTitleFallback($this->params, $articleAttribs, $menuParams, $document);
+		$this->addDescriptionFallback($this->params, $menuParams, $document, $view);
+		$this->addPublishedFallback($this->params, $article);
+
+		$this->injectOpenGraphData($document, $this->params);
+
+		return true;
 	}
 
-	public function onBeforeCompileHead()
+	/**
+	 * @param   \Joomla\Registry\Registry  $params
+	 * @param   \Joomla\Registry\Registry  $articleAttribs
+	 * @param   \Joomla\Registry\Registry  $menuParams
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function combineSettings(Registry $params, Registry $articleAttribs, Registry $menuParams): void
 	{
-		$document = Factory::getDocument();
+		static $settings = array(
+			'og_title',
+			'og_type',
+			'og_description',
+			'og_image',
+			'og_image_fb',
+			'og_image_pi',
+			'og_image_alt',
+			'og_article_published_time',
+			'og_article_author',
+			'og_product_availability',
+			'og_product_price_currency',
+			'og_product_price_amount',
+			'tw_title',
+			'tw_description',
+			'tw_image',
+			'tw_image_alt',
+			'tw_site',
+			'tw_type',
+			'tw_creator'
+		);
+
 		$config = Factory::getConfig();
-		$jinput = Factory::getApplication()->input;
-		$option = $jinput->get('option', '', 'CMD');
-		$view = $jinput->get('view', '', 'CMD');
-		$context = $option . '.' . $view;
-		$id = (int)$jinput->get('id', '', 'CMD');
 
-		$article = $this->getObjectContent($id);
-
-		if ($context == 'com_finder.indexer') {
-			return true;
+		if ($config === null)
+		{
+			throw new \RuntimeException('Unable to load global configuration');
 		}
 
-		if ($jinput->get('format', '', 'CMD') == 'feed') {
-			return true;
+		$params->set('sitename', $config->get('sitename'));
+		$params->set('base_url', Uri::base());
+		$params->set('url', Uri::getInstance());
+
+		foreach ($settings as $setting)
+		{
+			$params->set(
+				$setting,
+				// Priority A - Menu parameters
+				$menuParams->get(
+					$setting,
+					// Priority B - Article parameters
+					$articleAttribs->get(
+						$setting,
+						// Priority C - Module parameters
+						$params->get(
+							$setting,
+							''
+						)
+					)
+				)
+			);
+		}
+	}
+
+	/**
+	 * @param   \Joomla\Registry\Registry  $params
+	 * @param   \Joomla\Registry\Registry  $articleImages
+	 * @param   string                     $view
+	 * @param   string                     $userAgent
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function addImageFallback(Registry $params, Registry $articleImages, string $view, string $userAgent): void
+	{
+		if ($view !== 'article')
+		{
+			return;
 		}
 
-		if ($this->app->isSite()) {
-
-			$app = Factory::getApplication();
-			$menu = $app->getMenu();
-			$active = $menu->getActive();
-			$itemId = $active->id;
-			$menu->params = $menu->getParams($itemId);
-
-			$useragent = false;
-
-			if ($_SERVER['HTTP_USER_AGENT']) {
-				$useragent = $_SERVER['HTTP_USER_AGENT'];
-			}
-
-			if ($useragent) {
-				$this->googlebot = false;
-				$this->facebookbot = false;
-				$this->pinterestbot = false;
-
-				if (stristr($useragent, "googlebot")) {
-					$this->googlebot = true;
-				}
-
-				if (stristr($useragent, "facebot") || stristr($useragent, "facebook")) {
-					$this->facebookbot = true;
-					if (($this->app->get('gzip') == 1)) {
-						$this->app->set('gzip', 0);
-					}
-				}
-
-				if (stristr($useragent, "LinkedInBot") || stristr($useragent, "facebook")) {
-					if (($this->app->get('gzip') == 1)) {
-						$this->app->set('gzip', 0);
-					}
-				}
-
-				if (stristr($useragent, "pinterest")) {
-					$this->pinterestbot = true;
-				}
-			}
-
-			if (empty($this->app)) {
-				$this->app = Factory::getApplication();
-			}
-
-			if (isset($menu->params) || isset ($article->attribs)) {
-
-				//defined in the menu item
-				$menuParams = json_decode($menu->params);
-
-				//defined in the article
-				$articleAttribs = json_decode($article->attribs, true);
-				$articleImages = json_decode($article->images);
-
-
-				// all possible plugin settings in an array
-
-				$mySocialMediaSettings = array(
-					'og_title', 'og_type', 'og_description', 'og_image', 'og_image_fb', 'og_image_pi', 'og_image_alt', 'og_article_published_time', 'og_article_author', 'og_product_availability', 'og_product_price_currency', 'og_product_price_amount',
-					'tw_title', 'tw_description', 'tw_image', 'tw_image_alt', 'tw_site', 'tw_type', 'tw_creator');
-
-
-				foreach ($mySocialMediaSettings as $mySocialMediaSetting) {
-
-					$empty = true;
-					
-					if (!empty($this->params->get($mySocialMediaSetting))) {
-						$this->{$mySocialMediaSetting} = $this->params->get($mySocialMediaSetting);
-						$empty = false;
-
-					}
-
-					// if article params exist - priority B
-
-					if (!empty($articleAttribs[$mySocialMediaSetting])) {
-						$this->{$mySocialMediaSetting} = $articleAttribs[$mySocialMediaSetting];
-//						echo $this->{$mySocialMediaSetting};
-						$empty = false;
-
-					}
-
-					// if menu params exist - priority A
-
-					if (!empty($menuParams->$mySocialMediaSetting)) {
-						$this->{$mySocialMediaSetting} = $menuParams->$mySocialMediaSetting;
-						$empty = false;
-
-					}
-					if ($empty) {
-						$this->{$mySocialMediaSetting} = false;
-					}
-
-					// Testing the parameters
-					// echo $mySocialMediaSetting . '  ' . $this->{$mySocialMediaSetting} . '<br>';
-					
-				}
-
-
-				// Creating Fallbacks
-
-				// if articleIntro Image exist take this one
-				
-				// if any of the og Images are empty create a Fallback to the articleIntro Image
-
-				if ($view == 'article') {
-
-					if (!$this->og_image || $this->og_image == "") {
-
-						if ($articleImages->image_intro) {
-							$this->og_image = $articleImages->image_intro;
-						}
-						if ($articleImages->image_fulltext) {
-							$this->og_image = $articleImages->image_fulltext;
-						}
-					}
-
-					if (!$this->og_image_fb || $this->og_image_fb == "") {
-						if ($articleImages->image_intro) {
-							$this->og_image_fb = $articleImages->image_intro;
-						}
-						if ($articleImages->image_fulltext) {
-							$this->og_image_fb = $articleImages->image_fulltext;
-						}
-					}
-
-					if (!$this->og_image_pi || $this->og_image_pi == "") {
-						if ($articleImages->image_intro) {
-							$this->og_image_pi = $articleImages->image_intro;
-						}
-						if ($articleImages->image_fulltext) {
-							$this->og_image_pi = $articleImages->image_fulltext;
-						}
-					}
-
-					if (!$this->tw_image || $this->tw_image == "") {
-						if ($articleImages->image_intro) {
-							$this->tw_image = $articleImages->image_intro;
-						}
-						if ($articleImages->image_fulltext) {
-							$this->tw_image = $articleImages->image_fulltext;
-						}
-					}
-
-					// if a og image alt does not exist but image alt exists and the intro image
-					if (!$this->og_image_alt || $this->og_image_alt == "") {
-						if ($articleImages->image_intro_alt && $articleImages->image_intro) {
-							$this->og_image_alt = $articleImages->image_intro_alt;
-							$this->tw_image_alt = $articleImages->image_intro_alt;
-						}
-
-						if ($articleImages->image_fulltext_alt && $articleImages->image_fulltext) {
-							$this->og_image_alt = $articleImages->image_intro_alt;
-							$this->tw_image_alt = $articleImages->image_intro_alt;
-						}
-					}
-				}
-
-				if (!$this->og_title || $this->og_title == "") {
-
-					// Set the OG Title to Page Title if its there
-
-					if ($menu->params['page_title']) {
-						$this->og_title = $menu->params['page_title'];
-					}
-
-					// Set the OG Title to Article Title if its there (Overwrites Page Title)
-
-					if (isset($articleAttribs['article_page_title'])) {
-						$this->og_title = $articleAttribs['article_page_title'];
-					}
-				}
-
-				if (!$this->tw_title || $this->tw_title == "") {
-					if ($menu->params['page_title']) {
-						$this->tw_title = $menu->params['page_title'];
-					}
-					if (isset($articleAttribs['article_page_title'])) {
-						$this->tw_title = $articleAttribs['article_page_title'];
-					}
-				}
-
-
-				// gets the page description if nothing else is set
-
-				if (!$this->og_description || $this->og_description == "") {
-
-					if ($view == 'category') {
-						if ($document->description) {
-							$this->og_description = $document->description;
-						}
-
-						if ($menu->params['page_description']) {
-							$this->og_description = $menu->params['page_description'];
-						}
-						if ($menu->params['menu-meta_description']) {
-							$this->og_description = $menu->params['menu-meta_description'];
-						}
-
-					} else {
-						if ($document->description) {
-							$this->og_description = $document->description;
-						}
-					}
-
-
-				}
-
-				if (!$this->tw_description || $this->tw_description == "") {
-
-					if ($view == 'category') {
-
-						if ($document->description) {
-							$this->tw_description = $document->description;
-						}
-
-						if ($menu->params['page_description']) {
-							$this->tw_description = $menu->params['page_description'];
-						}
-						if ($menu->params['menu-meta_description']) {
-							$this->tw_description = $menu->params['menu-meta_description'];
-						}
-					} else {
-						if ($document->description) {
-							$this->tw_description = $document->description;
-						}
-					}
-
-				}
-
-
-				if (!$this->og_article_published_time || $this->og_article_published_time == "") {
-
-					// get the creation date
-					if ($article->created) {
-						$this->og_article_published_time = $article->created;
-					}
-
-				}
-
-				// gets the page title if nothing else is set
-
-				if (!$this->og_title || $this->og_title == "") {
-
-					if ($view == 'category') {
-						if ($document->title) {
-							$this->og_title = $document->title;
-						}
-
-						if ($menu->params['page_title']) {
-							$this->og_title = $menu->params['page_title'];
-						}
-
-					}
-
-					if ($view == 'article') {
-
-						if ($menu->params['page_title']) {
-							$this->og_title = $menu->params['page_title'];
-						}
-
-						if ($document->title) {
-							$this->og_title = $document->title;
-						}
-
-					}
-
-				}
-
-				if (!$this->tw_title || $this->tw_title == "") {
-					if ($menu->params['page_title']) {
-						$this->tw_title = $menu->params['page_title'];
-					}
-
-					if ($document->title) {
-						$this->tw_title = $document->title;
-					}
-
-				}
-
-			}
-
-
-			//Setup the metadata
-
-			if ($this->tw_type && !$document->getMetaData('twitter:card')) {
-				$document->setMetaData('twitter:card', $this->tw_type, 'name');
-			}
-			if ($this->tw_site && !$document->getMetaData('twitter:site') && $this->tw_site != '@username') {
-				$document->setMetaData('twitter:site', $this->tw_site, 'name');
-			}
-			if ($this->tw_creator && !$document->getMetaData('twitter:creator')) {
-				$document->setMetaData('twitter:creator', $this->tw_creator, 'name');
-			}
-			if ($this->tw_title && !$document->getMetaData('twitter:title')) {
-				$document->setMetaData('twitter:title', $this->tw_title, 'name');
-			}
-			if ($this->tw_description && !$document->getMetaData('twitter:description')) {
-				$document->setMetaData('twitter:description', $this->tw_description, 'name');
-			}
-			if ($this->tw_image && !$document->getMetaData('twitter:image')) {
-				$document->setMetaData('twitter:image', Uri::base() . $this->tw_image, 'name');
-				$document->setMetaData('twitter:image:alt', $this->tw_image_alt, 'name');
-			}
-
-
-			$document->setMetaData('og:site_name', $config->get('sitename'), 'property');
-
-			$document->setMetaData('og:url', Uri::getInstance(), 'property');
-
-
-			if ($this->og_type && !$document->getMetaData('og:type')) {
-				$document->setMetaData('og:type', $this->og_type, 'property');
-			}
-
-			if ($this->og_title && !$document->getMetaData('og:title')) {
-				$document->setMetaData('og:title', $this->og_title, 'property');
-			}
-
-			if ($this->og_description && !$document->getMetaData('og:description')) {
-				$document->setMetaData('og:description', $this->og_description, 'property');
-			}
-
-			if ($this->og_article_published_time && !$document->getMetaData('article:published_time')) {
-				$document->setMetaData('article:published_time', $this->og_article_published_time, 'property');
-			}
-
-			if ($this->og_article_author && !$document->getMetaData('article:author')) {
-				$document->setMetaData('article:author', $this->og_article_author, 'property');
-			}
-
-
-			if ($this->og_type == 'product') {
-				if ($this->og_product_price && !$document->getMetaData('product:price:amount')) {
-					$document->setMetaData('product:price:amount', $this->og_product_price, 'property');
-				}
-
-				if ($this->og_product_currency && !$document->getMetaData('product:price:currency')) {
-					$document->setMetaData('product:price:currency', $this->og_product_price, 'property');
-				}
-
-				if ($this->og_product_availability && !$document->getMetaData('og:availability')) {
-					$document->setMetaData('og:availability', $this->og_product_price, 'property');
-				}
-			}
-
-
-			if (($this->og_image || $this->og_image_fb || $this->og_image_pi) && !$document->getMetaData('og:image')) {
-
-				if (!function_exists('addOpenGraphImage')) {
-					function addOpenGraphImage($file)
+		$alt = $params->get('og_image_alt');
+
+		if ($userAgent === self::FACEBOOK && $params->get('og_image_fb') > '')
+		{
+			$image = $params->get('og_image_fb');
+		}
+		elseif ($userAgent === self::GOOGLE && $params->get('og_image') > '')
+		{
+			$image = $params->get('og_image');
+		}
+		elseif ($userAgent === self::PINTEREST && $params->get('og_image_pi') > '')
+		{
+			$image = $params->get('og_image_pi');
+		}
+		elseif ($params->get('og_image_fb') > '')
+		{
+			$image = $params->get('og_image_fb');
+		}
+		else
+		{
+			[$image, $alt] = $this->getArticleImage($articleImages);
+		}
+
+		$params->set('og_image', $image);
+		$params->set('og_image_alt', $alt);
+		$params->set('tw_image', $image);
+		$params->set('tw_image_alt', $alt);
+	}
+
+	/**
+	 * @param   \Joomla\Registry\Registry      $params
+	 * @param   \Joomla\Registry\Registry      $articleAttribs
+	 * @param   \Joomla\Registry\Registry      $menuParams
+	 * @param   \Joomla\CMS\Document\Document  $document
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function addTitleFallback(
+		Registry $params,
+		Registry $articleAttribs,
+		Registry $menuParams,
+		Document $document
+	): void {
+		$title = $this->getTitle($articleAttribs, $menuParams, $document);
+
+		$params->def('og_title', $title);
+		$params->def('tw_title', $title);
+	}
+
+	/**
+	 * @param   \Joomla\Registry\Registry       $params
+	 * @param   \Joomla\Registry\Registry       $menuParams
+	 * @param   \Joomla\CMS\Document\Document   $document
+	 * @param                                   $view
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function addDescriptionFallback(Registry $params, Registry $menuParams, Document $document, $view): void
+	{
+		$description = $this->getDescription($menuParams, $document, $view);
+
+		$params->def('og_description', $description);
+		$params->def('tw_description', $description);
+	}
+
+	/**
+	 * @param   \Joomla\Registry\Registry  $params
+	 * @param   \Joomla\CMS\Table\Content  $article
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function addPublishedFallback(Registry $params, Content $article): void
+	{
+		$params->def('og_article_published_time', $article->created ?? '');
+	}
+
+	/**
+	 * Get the article with the given ID
+	 *
+	 * @param   int  $id
+	 *
+	 * @return \Joomla\CMS\Table\Content
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function getArticle(int $id): Content
+	{
+		$article = new Content($this->db);
+		$article->load($id);
+
+		return $article;
+	}
+
+	/**
+	 * @param   \Joomla\Registry\Registry  $articleImages
+	 *
+	 * @return array
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function getArticleImage(Registry $articleImages): array
+	{
+		$image = $alt = '';
+
+		if ($articleImages->get('image_intro') > '')
+		{
+			$image = $articleImages->get('image_intro', '');
+			$alt   = $articleImages->get('image_intro_alt', '');
+		}
+		elseif ($articleImages->get('image_fulltext') > '')
+		{
+			$image = $articleImages->get('image_fulltext', '');
+			$alt   = $articleImages->get('image_fulltext_alt', '');
+		}
+
+		return array($image, $alt);
+	}
+
+	/**
+	 * @param   \Joomla\Registry\Registry      $articleAttribs
+	 * @param   \Joomla\Registry\Registry      $menuParams
+	 * @param   \Joomla\CMS\Document\Document  $document
+	 *
+	 * @return string
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function getTitle(Registry $articleAttribs, Registry $menuParams, Document $document): string
+	{
+		return $articleAttribs->get(
+			'article_page_title',
+			$menuParams->get(
+				'page_title',
+				$document->title ?? ''
+			)
+		);
+	}
+
+	/**
+	 * @param   \Joomla\Registry\Registry      $menuParams
+	 * @param   \Joomla\CMS\Document\Document  $document
+	 * @param                                  $view
+	 *
+	 * @return string
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function getDescription(Registry $menuParams, Document $document, $view): string
+	{
+		if ($view === 'category')
+		{
+			$description = $menuParams->get(
+				'menu-meta_description',
+				$menuParams->get(
+					'page_description',
+					$document->description ?? ''
+				)
+			);
+		}
+		else
+		{
+			$description = $document->description ?? '';
+		}
+
+		return $description;
+	}
+
+	/**
+	 * Get the bot, if any
+	 *
+	 * If the bot is self::FACEBOOK, gzip compression is turned off.
+	 *
+	 * @return string One of this class' constants
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function getBot(): string
+	{
+		static $userAgents = [
+			self::GOOGLE    => ['googlebot'],
+			self::FACEBOOK  => ['facebot', 'facebook', 'LinkedInBot'],
+			self::PINTEREST => ['pinterest'],
+		];
+
+		$bot       = self::NONE;
+		$useragent = null;
+
+		if ($_SERVER['HTTP_USER_AGENT'])
+		{
+			$useragent = $_SERVER['HTTP_USER_AGENT'];
+		}
+
+		if (!empty($useragent))
+		{
+			foreach ($userAgents as $key => $subStrings)
+			{
+				foreach ($subStrings as $subString)
+				{
+					if (stripos($useragent, $subString) !== false)
 					{
-						$document = JFactory::getDocument();
-
-						$document->setMetaData('og:image', Uri::base() . $file, 'property');
-
-						$image_mime = image_type_to_mime_type(exif_imagetype($file));
-
-						$imageinfo = getimagesize($file);
-						$ix = $imageinfo[0];
-						$iy = $imageinfo[1];
-
-						$document->setMetaData('og:image:type', $image_mime, 'property');
-						$document->setMetaData('og:image:height', $iy);
-						$document->setMetaData('og:image:width', $ix);
-						$document->setMetaData('og:image:secure_url', Uri::base() . $file, 'property');
+						$bot = $key;
+						break 2;
 					}
 				}
-
-				// deliver open graph image based on user agent: Facebook, Google or Pinterest - Fallback to Facebook because it's the most used format
-
-				if ($this->facebookbot && $this->og_image_fb) {
-					addOpenGraphImage($this->og_image_fb);
-				} elseif ($this->googlebot && $this->og_image) {
-					addOpenGraphImage($this->og_image);
-				} elseif ($this->pinterestbot && $this->og_image_pi) {
-					addOpenGraphImage($this->og_image_pi);
-				} else {
-					addOpenGraphImage($this->og_image_fb);
-				}
-
-				$document->setMetaData('og:image:alt', $this->og_image_alt, 'property');
-
 			}
 
+			if ($bot === self::FACEBOOK)
+			{
+				$this->app->set('gzip', 0);
+			}
+		}
+
+		return $bot;
+	}
+
+	/**
+	 * Get the parameters associated with the active menu item
+	 *
+	 * @return \Joomla\Registry\Registry
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function getMenuParams(): Registry
+	{
+		$menu   = $this->app->getMenu();
+
+		if ($menu === null)
+		{
+			return new Registry([]);
+		}
+
+		$active = $menu->getActive();
+
+		if ($active === null)
+		{
+			return new Registry([]);
+		}
+
+		$itemId = $active->id;
+
+		return $menu->getParams($itemId);
+	}
+
+	/**
+	 * Add OpenGraph data to document
+	 *
+	 * @param   \Joomla\CMS\Document\Document  $document
+	 * @param   string|null                    $image
+	 * @param   string|null                    $alt
+	 * @param   string|null                    $baseUrl
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function setOpenGraphImage(
+		Document $document,
+		?string $image = '',
+		?string $alt = '',
+		?string $baseUrl = ''
+	): void {
+		if (empty($image) || !empty($document->getMetaData('og:image')))
+		{
+			return;
+		}
+
+		$image = preg_replace('~^([\w\-./\\\]+).*$~', '$1', $image);
+
+		if (!file_exists($image))
+		{
+			return;
+		}
+
+		$url = empty($baseUrl) ? '' : rtrim($baseUrl, '/') . '/';
+		$url .= $image;
+
+		$this->setMetaData($document, 'og:image', $url, 'property');
+		$this->setMetaData($document, 'og:image:secure_url', $url, 'property');
+		$this->setMetaData($document, 'og:image:alt', $alt, 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:image', $url, 'name');
+		$this->setMetaDataIfNotSet($document, 'twitter:image:alt', $alt, 'name');
+
+		$info = getimagesize($image);
+
+		if (\is_array($info))
+		{
+			$this->setMetaData($document, 'og:image:type', $info['mime'], 'property');
+			$this->setMetaData($document, 'og:image:height', $info[1]);
+			$this->setMetaData($document, 'og:image:width', $info[0]);
 		}
 	}
 
-	private function getObjectContent($id, $table = 'content')
-	{
-		$db = JFactory::getDbo();
-
-		$dataobject = JTable::getInstance($table);
-		$dataobject->load($id);
-
-		return $dataobject;
+	/**
+	 * @param   \Joomla\CMS\Document\Document  $document
+	 * @param   string|null                    $type
+	 * @param   string|null                    $price
+	 * @param   string|null                    $currency
+	 * @param   string|null                    $availability
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function setProduct(
+		Document $document,
+		?string $type = '',
+		?string $price = '',
+		?string $currency = '',
+		?string $availability = ''
+	): void {
+		if ($type === 'product')
+		{
+			$this->setMetaDataIfNotSet($document, 'product:price:amount', $price, 'property');
+			$this->setMetaDataIfNotSet($document, 'product:price:currency', $currency, 'property');
+			$this->setMetaDataIfNotSet($document, 'og:availability', $availability, 'property');
+		}
 	}
 
-	private function getObjectMenu($id, $table = 'menu')
-	{
-		$db = JFactory::getDbo();
-
-		$dataobject = JTable::getInstance($table);
-		$dataobject->load($id);
-
-		return $dataobject;
+	/**
+	 * Set metadata in document only if not already set
+	 *
+	 * @param   \Joomla\CMS\Document\Document  $document
+	 * @param   string                         $key
+	 * @param   string|null                    $value
+	 * @param   string                         $attribute
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function setMetaDataIfNotSet(
+		Document $document,
+		string $key,
+		?string $value = '',
+		string $attribute = 'name'
+	): void {
+		if (!empty($value) && empty($document->getMetaData($key)))
+		{
+			$this->setMetaData($document, $key, $value, $attribute);
+		}
 	}
 
+	/**
+	 * Set metadata in document regardless previous content
+	 *
+	 * @param   \Joomla\CMS\Document\Document  $document
+	 * @param   string                         $key
+	 * @param   string|null                    $value
+	 * @param   string                         $attribute
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function setMetaData(Document $document, string $key, ?string $value = '', string $attribute = 'name'): void
+	{
+		$document->setMetaData($key, $value, $attribute);
+	}
+
+	/**
+	 * @param   \Joomla\CMS\Document\Document  $document
+	 * @param   \Joomla\Registry\Registry      $params
+	 *
+	 * @return void
+	 * @since  __DEPLOY_VERSION__
+	 */
+	private function injectOpenGraphData(Document $document, Registry $params): void
+	{
+		$this->setMetaData($document, 'og:url', $params->get('url'), 'property');
+
+		$this->setMetaData($document, 'og:site_name', $params->get('sitename'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:site', $params->get('tw_site'), 'name');
+
+		$this->setMetaDataIfNotSet($document, 'og:type', $params->get('og_type'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:card', $params->get('tw_type'), 'name');
+
+		$this->setMetaDataIfNotSet($document, 'og:title', $params->get('og_title'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:title', $params->get('tw_title'), 'name');
+
+		$this->setMetaDataIfNotSet($document, 'og:description', $params->get('og_description'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:description', $params->get('tw_description'), 'name');
+
+		$this->setMetaDataIfNotSet($document, 'article:author', $params->get('og_article_author'), 'property');
+		$this->setMetaDataIfNotSet($document, 'twitter:creator', $params->get('tw_creator'), 'name');
+
+		$this->setMetaDataIfNotSet(
+			$document,
+			'article:published_time',
+			$params->get('og_article_published_time'),
+			'property'
+		);
+
+		$this->setOpenGraphImage(
+			$document,
+			$params->get('og_image'),
+			$params->get('og_image_alt'),
+			$params->get('base_url')
+		);
+
+		$this->setProduct(
+			$document,
+			$params->get('og_type'),
+			$params->get('og_product_price'),
+			$params->get('og_product_currency'),
+			$params->get('og_product_availability')
+		);
+	}
 }
