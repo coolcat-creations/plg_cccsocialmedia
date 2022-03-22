@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" version="3.8" group="system" method="upgrade">
 	<name>PLG_CCCSOCIALMEDIA</name>
-	<creationDate>22.06.18</creationDate>
+	<creationDate>22.03.22</creationDate>
 	<author>coolcat-creations.com - Elisa Foltyn</author>
 	<authorEmail>mail@coolcat-creations.com</authorEmail>
 	<authorUrl>http://www.coolcat-creations.com</authorUrl>
 	<copyright>coolcat-creations.com</copyright>
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
-	<version>__DEPLOY_VERSION__</version>
+	<version>2.0.0-rc.1</version>
 	<description>PLG_CCCSOCIALMEDIA_XML_DESCRIPTION</description>
 
 	<!-- Language files -->
