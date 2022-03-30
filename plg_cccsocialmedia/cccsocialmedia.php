@@ -149,7 +149,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   \Joomla\Registry\Registry  $menuParams
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function combineSettings(Registry $params, Registry $articleAttribs, Registry $menuParams): void
 	{
@@ -214,7 +214,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   string                     $userAgent
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function addImageFallback(Registry $params, Registry $articleImages, string $view, string $userAgent): void
 	{
@@ -259,7 +259,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   \Joomla\CMS\Document\Document  $document
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function addTitleFallback(
 		Registry $params,
@@ -280,7 +280,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param                                   $view
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function addDescriptionFallback(Registry $params, Registry $menuParams, Document $document, $view): void
 	{
@@ -295,7 +295,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   \Joomla\CMS\Table\Content  $article
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function addPublishedFallback(Registry $params, Content $article): void
 	{
@@ -308,7 +308,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   int  $id
 	 *
 	 * @return \Joomla\CMS\Table\Content
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function getArticle(int $id): Content
 	{
@@ -322,7 +322,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   \Joomla\Registry\Registry  $articleImages
 	 *
 	 * @return array
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function getArticleImage(Registry $articleImages): array
 	{
@@ -348,7 +348,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   \Joomla\CMS\Document\Document  $document
 	 *
 	 * @return string
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function getTitle(Registry $articleAttribs, Registry $menuParams, Document $document): string
 	{
@@ -367,7 +367,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param                                  $view
 	 *
 	 * @return string
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function getDescription(Registry $menuParams, Document $document, $view): string
 	{
@@ -395,7 +395,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * If the bot is self::FACEBOOK, gzip compression is turned off.
 	 *
 	 * @return string One of this class' constants
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function getBot(): string
 	{
@@ -440,7 +440,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * Get the parameters associated with the active menu item
 	 *
 	 * @return \Joomla\Registry\Registry
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function getMenuParams(): Registry
 	{
@@ -472,7 +472,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   string|null                    $baseUrl
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function setOpenGraphImage(
 		Document $document,
@@ -519,7 +519,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   string|null                    $availability
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function setProduct(
 		Document $document,
@@ -545,7 +545,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   string                         $attribute
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function setMetaDataIfNotSet(
 		Document $document,
@@ -568,7 +568,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   string                         $attribute
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function setMetaData(Document $document, string $key, ?string $value = '', string $attribute = 'name'): void
 	{
@@ -580,7 +580,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 * @param   \Joomla\Registry\Registry      $params
 	 *
 	 * @return void
-	 * @since  __DEPLOY_VERSION__
+	 * @since  2.0.0
 	 */
 	private function injectOpenGraphData(Document $document, Registry $params): void
 	{
