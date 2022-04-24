@@ -218,10 +218,6 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 */
 	private function addImageFallback(Registry $params, Registry $articleImages, string $view, string $userAgent): void
 	{
-		if ($view !== 'article')
-		{
-			return;
-		}
 
 		$alt = $params->get('og_image_alt');
 
@@ -328,15 +324,27 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	{
 		$image = $alt = '';
 
-		if ($articleImages->get('image_intro') > '')
-		{
-			$image = $articleImages->get('image_intro', '');
-			$alt   = $articleImages->get('image_intro_alt', '');
+		if ($articleImages->get('image_intro') > '') {
+			// get part before # in image if # exists
+			if (strpos($articleImages->get('image_intro'), '#') !== false) {
+				$image = substr($articleImages->get('image_intro'), 0, strpos($articleImages->get('image_intro'), '#'));
+			} else {
+				$image = $articleImages->get('image_intro');
+			}
+
+			$alt = $articleImages->get('image_intro_alt', '');
+
 		}
-		elseif ($articleImages->get('image_fulltext') > '')
-		{
-			$image = $articleImages->get('image_fulltext', '');
-			$alt   = $articleImages->get('image_fulltext_alt', '');
+		if ($articleImages->get('image_fulltext') > '') {
+
+			if (strpos($articleImages->get('image_fulltext'), '#') !== false) {
+				$image = substr($articleImages->get('image_fulltext'), 0, strpos($articleImages->get('image_fulltext'), '#'));
+			} else {
+				$image = $articleImages->get('image_fulltext');
+			}
+
+			$alt = $articleImages->get('image_fulltext_alt', '');
+
 		}
 
 		return array($image, $alt);
