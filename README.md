@@ -18,3 +18,5 @@ To make sure you have at least something in the open graph data the plugin has a
 - if the open graph title is empty get the page title from menu item. If there is an article title take this one.
 - if the open graph or twitter description is empty use the meta description
 - if the open graph published time is empty get the creation date of the article if existent
+
+This SEO relevant plugin is also used on https://seo-sommer.de
