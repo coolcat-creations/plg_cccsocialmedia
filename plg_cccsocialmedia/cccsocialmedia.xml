@@ -34,6 +34,20 @@
 
 		</fields>
 
+		<fieldset name="basic">
+			<field
+					name="whereToRun"
+					type="list"
+					label="PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN"
+					default=""
+			>
+				<option value="">PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN_SELECT</option>
+				<option value="admin">PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN_ADMIN</option>
+				<option value="site">PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN_SITE</option>
+				<option value="both">PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN_BOTH</option>
+			</field>
+		</fieldset>
+
 		<fields name="params">
 			<fieldset name="socialmedia" label="PLG_SYSTEM_CCCSOCIALMEDIA">
 
