@@ -42,6 +42,18 @@
 				       showon="hidemessages:0"
 				/>
 
+				<field
+						name="whereToRun"
+						type="list"
+						label="PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN"
+						default=""
+				>
+					<option value="">PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN_SELECT</option>
+					<option value="administrator">JADMINISTRATOR</option>
+					<option value="site">JSITE</option>
+					<option value="both">PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN_BOTH</option>
+				</field>
+
 				<field name="hidemessages" type="radio" default="0"
 				       label="PLG_SYSTEM_CCCSOCIALMEDIA_HIDE_MESSAGES"
 				>

@@ -74,6 +74,13 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		$option = $this->app->input->get('option');
 		$client = $this->app->getName();
 
+		$whereToRun = $this->params->get('whereToRun', 'both');
+		if (($whereToRun === 'administrator' || $whereToRun === 'site')
+			&& $client !== $whereToRun)
+		{
+			return true;
+		}
+
 		switch ("$option.$client")
 		{
 			case 'com_menus.administrator':
