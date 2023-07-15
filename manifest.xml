@@ -7,7 +7,7 @@
 		<client>site</client>
 		<version>2.0.1</version>
 		<downloads>
-			<downloadurl type="full" format="zip">https://github.com/coolcat-creations/plg_cccsocialmedia/releases/download/2.0.1/plg_cccsocialmedia.zip</downloadurl>
+			<downloadurl type="full" format="zip">https://github.com/coolcat-creations/plg_cccsocialmedia/releases/download/v2.0.1/plg_cccsocialmedia.zip</downloadurl>
 		</downloads>
 		<tags>
 			<tag>stable</tag>
