@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" version="3.8" group="system" method="upgrade">
 	<name>PLG_CCCSOCIALMEDIA</name>
-	<creationDate>22.03.22</creationDate>
+	<creationDate>15.07.2023</creationDate>
 	<author>coolcat-creations.com - Elisa Foltyn</author>
 	<authorEmail>mail@coolcat-creations.com</authorEmail>
 	<authorUrl>http://www.coolcat-creations.com</authorUrl>
