@@ -126,6 +126,11 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			return true;
 		}
 
+		$uniqueArticle = true;
+		if(is_array($input->get('id', 0, 'int'))){
+			$uniqueArticle = false;
+		}
+
 		if (!$this->app->isClient('site'))
 		{
 			return true;
@@ -133,7 +138,13 @@ class plgSystemCccsocialmedia extends CMSPlugin
 
 		/** @var \Joomla\CMS\Document\Document $document */
 		$document       = $this->app->getDocument();
-		$article        = $this->getArticle($input->get('id', 0, 'int'));
+
+		if($uniqueArticle) {
+			$article        = $this->getArticle($input->get('id', 0, 'int'));
+		} else {
+			$article        = false;
+		}
+
 		$menuParams     = $this->getMenuParams();
 		$articleAttribs = new Registry($article->attribs ?? '{}');
 		$articleImages  = new Registry($article->images ?? '{}');
@@ -143,8 +154,11 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		$this->addImageFallback($this->params, $articleImages, $view, $userAgent);
 		$this->addTitleFallback($this->params, $articleAttribs, $menuParams, $document);
 		$this->addDescriptionFallback($this->params, $menuParams, $document, $view);
-		$this->addPublishedFallback($this->params, $article);
 
+		if($uniqueArticle) {
+			$this->addPublishedFallback($this->params, $article);
+		}
+		
 		$this->injectOpenGraphData($document, $this->params);
 
 		return true;
