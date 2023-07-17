@@ -5,6 +5,7 @@
 		<element>plg_cccsocialmedia</element>
 		<type>plugin</type>
 		<client>site</client>
+		<folder>system</folder>
 		<version>2.0.1</version>
 		<downloads>
 			<downloadurl type="full" format="zip">https://github.com/coolcat-creations/plg_cccsocialmedia/releases/download/v2.0.1/plg_cccsocialmedia.zip</downloadurl>
