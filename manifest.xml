@@ -2,7 +2,7 @@
 	<update>
 		<name>plg_cccsocialmedia</name>
 		<description>Joomla Plugin to display Open Graph and Twitter Options in your menu items and articles</description>
-		<element>plg_cccsocialmedia</element>
+		<element>cccsocialmedia</element>
 		<type>plugin</type>
 		<client>site</client>
 		<folder>system</folder>
