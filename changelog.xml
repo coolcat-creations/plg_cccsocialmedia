@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<changelogs>
+	<changelog>
+		<element>cccsocialmedia</element>
+		<type>plugin</type>
+		<version>2.1.0b</version>
+		<security>
+			<item>Article data (Open Graph texts, images, publish date) is only read on single article views of com_content, and only for published articles the visitor is allowed to see. Before, any "id" in the URL loaded the article with that id, including unpublished or access-restricted ones.</item>
+			<item>og:url no longer contains the query string of the request.</item>
+			<item>Image paths are resolved inside the site root only.</item>
+		</security>
+		<fix>
+			<item>Existing Open Graph data set by other extensions is no longer overwritten (PR #14).</item>
+			<item>Product price and currency (og_type "product") are now written to the page; the plugin read the wrong setting names before.</item>
+			<item>article:published_time is now ISO 8601 and uses the publish date of the article.</item>
+			<item>No PHP warning any more when a request has no User-Agent header.</item>
+			<item>Category pages no longer show the image of an unrelated article with the same id.</item>
+			<item>Removed stray example meta lines from the forms and the manifest.</item>
+			<item>Help text no longer links to the X Card Validator, which X shut down.</item>
+			<item>Pinterest help text no longer links to the Rich Pin Validator, which Pinterest shut down. Rich Pins work without validation now.</item>
+			<item>When another extension already set og:image, the plugin no longer adds image type and size of a different image.</item>
+		</fix>
+		<addition>
+			<item>The general image (og_image) is now the last fallback for every visitor: pages without a Facebook image and without an article image still get an og:image. Before, it was only used for Google.</item>
+			<item>New plugin option "Priority of the settings": menu item before article (default, as before) or article before menu item.</item>
+		</addition>
+		<change>
+			<item>Twitter is now called X (Twitter) in all labels and help texts. The meta tags stay twitter:*, as X still reads them under this name.</item>
+			<item>og:image:width and og:image:height are now written as property, like the other Open Graph tags.</item>
+			<item>Ready for Joomla 5 and Joomla 6: no longer relies on the deprecated plugin property injection, $app->input and Factory::getConfig().</item>
+			<item>Update server offers this version to Joomla 4, 5 and 6 (beta channel).</item>
+		</change>
+	</changelog>
+</changelogs>

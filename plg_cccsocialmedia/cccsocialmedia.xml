@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <extension type="plugin" version="3.8" group="system" method="upgrade">
 	<name>PLG_CCCSOCIALMEDIA</name>
-	<creationDate>15.07.2023</creationDate>
+	<creationDate>19.11.2026</creationDate>
 	<author>coolcat-creations.com - Elisa Foltyn</author>
 	<authorEmail>mail@coolcat-creations.com</authorEmail>
 	<authorUrl>http://www.coolcat-creations.com</authorUrl>
 	<copyright>coolcat-creations.com</copyright>
 	<license>GNU General Public License version 2 or later; see LICENSE.txt</license>
-	<version>2.0.1</version>
+	<version>2.1.0b</version>
 	<description>PLG_CCCSOCIALMEDIA_XML_DESCRIPTION</description>
 
 	<!-- Language files -->
@@ -52,6 +52,17 @@
 					<option value="administrator">JADMINISTRATOR</option>
 					<option value="site">JSITE</option>
 					<option value="both">PLG_SYSTEM_CCCSOCIALMEDIA_ENABLE_IN_BOTH</option>
+				</field>
+
+				<field
+						name="priority"
+						type="list"
+						label="PLG_SYSTEM_CCCSOCIALMEDIA_PRIORITY"
+						description="PLG_SYSTEM_CCCSOCIALMEDIA_PRIORITY_DESC"
+						default="menu"
+				>
+					<option value="menu">PLG_SYSTEM_CCCSOCIALMEDIA_PRIORITY_MENU</option>
+					<option value="article">PLG_SYSTEM_CCCSOCIALMEDIA_PRIORITY_ARTICLE</option>
 				</field>
 
 				<field name="hidemessages" type="radio" default="0"
@@ -117,10 +128,6 @@
 						<option value="pending">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT_PENDING</option>
 						<option value="out of stock">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT_OUTOFSTOCK</option>
 					</field>
-
-					<meta property="product:price:amount" content="98.00" />
-					<meta property="product:price:currency" content="USD" />
-					<meta property="og:availability" content="instock" />
 
 					<field name="og_article_published_time" type="calendar" default=""
 					       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_ARTICLE_PUBLISHED_TIME"
@@ -269,6 +276,8 @@
 	<updateservers>
 		<server type="extension" name="plg_cccsocialmedia Update Site">https://raw.githubusercontent.com/coolcat-creations/plg_cccsocialmedia/master/manifest.xml</server>
 	</updateservers>
+
+	<changelogurl>https://raw.githubusercontent.com/coolcat-creations/plg_cccsocialmedia/master/changelog.xml</changelogurl>
 
 
 </extension>

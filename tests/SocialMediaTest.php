@@ -237,11 +237,12 @@ class SocialMediaTest extends TestCase
 			],
 			'view'       => 'category',
 			'user_agent' => plgSystemCccsocialmedia::GOOGLE,
+			// The plugin has always used the same image for Twitter, in every view
 			'expected'   => [
 				'og_image'     => 'OG Image Google',
 				'og_image_alt' => 'OG Image alt text',
-				'tw_image'     => null,
-				'tw_image_alt' => null,
+				'tw_image'     => 'OG Image Google',
+				'tw_image_alt' => 'OG Image alt text',
 			]
 		];
 		yield 'article view google' => [
@@ -324,11 +325,12 @@ class SocialMediaTest extends TestCase
 			],
 			'view'       => 'article',
 			'user_agent' => plgSystemCccsocialmedia::FACEBOOK,
+			// The full text image has always won over the intro image when both are set
 			'expected'   => [
-				'og_image'     => 'Article Intro Image',
-				'og_image_alt' => 'Article Intro Image alt text',
-				'tw_image'     => 'Article Intro Image',
-				'tw_image_alt' => 'Article Intro Image alt text',
+				'og_image'     => 'Article Fulltext Image',
+				'og_image_alt' => 'Article Fulltext Image alt text',
+				'tw_image'     => 'Article Fulltext Image',
+				'tw_image_alt' => 'Article Fulltext Image alt text',
 			]
 		];
 		yield 'article view facebook w/o fb image w/o intro image' => [
@@ -370,6 +372,26 @@ class SocialMediaTest extends TestCase
 				'og_image'     => 'OG Image Facebook',
 				'og_image_alt' => 'OG Image alt text',
 				'tw_image'     => 'OG Image Facebook',
+				'tw_image_alt' => 'OG Image alt text',
+			]
+		];
+		yield 'facebook w/o fb image w/o article images uses general image' => [
+			'plugin'     => [
+				'og_image'     => 'OG Image Google',
+				'og_image_alt' => 'OG Image alt text',
+			],
+			'images'     => [
+				'image_intro'        => '',
+				'image_intro_alt'    => '',
+				'image_fulltext'     => '',
+				'image_fulltext_alt' => '',
+			],
+			'view'       => 'category',
+			'user_agent' => plgSystemCccsocialmedia::FACEBOOK,
+			'expected'   => [
+				'og_image'     => 'OG Image Google',
+				'og_image_alt' => 'OG Image alt text',
+				'tw_image'     => 'OG Image Google',
 				'tw_image_alt' => 'OG Image alt text',
 			]
 		];
@@ -456,11 +478,11 @@ class SocialMediaTest extends TestCase
 					'og:image'            => 'tests/fixtures/powered_by.png',
 					'og:image:secure_url' => 'tests/fixtures/powered_by.png',
 					'og:image:alt'        => null,
-					'og:image:type' => 'image/png',
+					'og:image:type'       => 'image/png',
+					'og:image:width'      => '294',
+					'og:image:height'     => '44',
 				],
 				'name'     => [
-					'og:image:width'  => '294',
-					'og:image:height' => '44',
 					'twitter:image' => 'tests/fixtures/powered_by.png',
 				],
 			],
@@ -476,15 +498,16 @@ class SocialMediaTest extends TestCase
 					'og:image:secure_url' => 'tests/fixtures/powered_by.png',
 					'og:image:alt'        => 'Powered by Joomla!',
 					'og:image:type'       => 'image/png',
+					'og:image:width'      => '294',
+					'og:image:height'     => '44',
 				],
 				'name'     => [
-					'og:image:width'    => '294',
-					'og:image:height'   => '44',
-					'twitter:image'     => 'tests/fixtures/powered_by.png',
+					'twitter:image'     =>'tests/fixtures/powered_by.png',
 					'twitter:image:alt' => 'Powered by Joomla!',
 				],
 			],
 		];
+		// Since 2.1.0: an og:image set by another extension is kept (PR #14), and no type/size of a different image is added
 		yield 'another image in document' => [
 			'document' => [
 				'_metaTags' => [
@@ -498,15 +521,10 @@ class SocialMediaTest extends TestCase
 			'base_url' => null,
 			'expected' => [
 				'property' => [
-					'og:image'            => 'tests/fixtures/powered_by.png',
-					'og:image:secure_url' => 'tests/fixtures/powered_by.png',
-					'og:image:alt'        => 'Powered by Joomla!',
-					'og:image:type'       => 'image/png',
+					'og:image' => 'preset-image.jpg',
 				],
 				'name'     => [
-					'og:image:width'    => '294',
-					'og:image:height'   => '44',
-					'twitter:image'     => 'tests/fixtures/powered_by.png',
+					'twitter:image'     =>'tests/fixtures/powered_by.png',
 					'twitter:image:alt' => 'Powered by Joomla!',
 				],
 			],
@@ -522,11 +540,11 @@ class SocialMediaTest extends TestCase
 					'og:image:secure_url' => 'https://example.com/tests/fixtures/powered_by.png',
 					'og:image:alt'        => 'Powered by Joomla!',
 					'og:image:type'       => 'image/png',
+					'og:image:width'      => '294',
+					'og:image:height'     => '44',
 				],
 				'name'     => [
-					'og:image:width'    => '294',
-					'og:image:height'   => '44',
-					'twitter:image'     => 'https://example.com/tests/fixtures/powered_by.png',
+					'twitter:image'     =>'https://example.com/tests/fixtures/powered_by.png',
 					'twitter:image:alt' => 'Powered by Joomla!',
 				],
 			],
@@ -542,11 +560,11 @@ class SocialMediaTest extends TestCase
 					'og:image:secure_url' => 'https://example.com/tests/fixtures/powered_by.png',
 					'og:image:alt'        => 'Powered by Joomla!',
 					'og:image:type'       => 'image/png',
+					'og:image:width'      => '294',
+					'og:image:height'     => '44',
 				],
 				'name'     => [
-					'og:image:width'    => '294',
-					'og:image:height'   => '44',
-					'twitter:image'     => 'https://example.com/tests/fixtures/powered_by.png',
+					'twitter:image'     =>'https://example.com/tests/fixtures/powered_by.png',
 					'twitter:image:alt' => 'Powered by Joomla!',
 				],
 			],

@@ -72,10 +72,6 @@
 					<option value="out of stock">PLG_SYSTEM_CCCSOCIALMEDIA_PRODUCT_OUTOFSTOCK</option>
 				</field>
 
-				<meta property="product:price:amount" content="98.00" />
-				<meta property="product:price:currency" content="USD" />
-				<meta property="og:availability" content="instock" />
-
 				<field name="og_article_published_time" type="calendar" default=""
 				       label="PLG_SYSTEM_CCCSOCIALMEDIA_OG_ARTICLE_PUBLISHED_TIME"
 				       description="PLG_SYSTEM_CCCSOCIALMEDIA_OG_ARTICLE_PUBLISHED_TIME_DESC"

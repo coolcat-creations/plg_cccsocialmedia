@@ -1,7 +1,29 @@
 <updates>
 	<update>
 		<name>plg_cccsocialmedia</name>
-		<description>Joomla Plugin to display Open Graph and Twitter Options in your menu items and articles</description>
+		<description>Joomla Plugin to display Open Graph and X (Twitter) Options in your menu items and articles</description>
+		<element>cccsocialmedia</element>
+		<type>plugin</type>
+		<client>site</client>
+		<folder>system</folder>
+		<version>2.1.0b</version>
+		<downloads>
+			<downloadurl type="full" format="zip">https://github.com/coolcat-creations/plg_cccsocialmedia/releases/download/v2.1.0b/plg_cccsocialmedia_2.1.0b.zip</downloadurl>
+		</downloads>
+		<sha256>4706e92c010c5e807e3bb043afe6287dfbde4dff47c4f6c2f6d4cd9ea77156f5</sha256>
+		<tags>
+			<tag>beta</tag>
+		</tags>
+		<infourl title="CCC Socialmedia on GitHub">https://github.com/coolcat-creations/plg_cccsocialmedia/blob/master/README.md</infourl>
+		<changelogurl>https://raw.githubusercontent.com/coolcat-creations/plg_cccsocialmedia/master/changelog.xml</changelogurl>
+		<maintainer>Elisa Foltyn</maintainer>
+		<maintainerurl>https://www.coolcat-creations.com</maintainerurl>
+		<targetplatform name="joomla" version="(4|5|6)\.\d+"/>
+		<php_minimum>7.4</php_minimum>
+	</update>
+	<update>
+		<name>plg_cccsocialmedia</name>
+		<description>Joomla Plugin to display Open Graph and X (Twitter) Options in your menu items and articles</description>
 		<element>cccsocialmedia</element>
 		<type>plugin</type>
 		<client>site</client>

@@ -1,9 +1,9 @@
 {
     "require-dev": {
-        "phpunit/phpunit": "^9.5",
-        "joomla/event": "^2.0",
-        "joomla/registry": "^2.0",
-        "joomla/di": "^2.0"
+        "phpunit/phpunit": "^9.6",
+        "joomla/event": "^2.0 || ^3.0",
+        "joomla/registry": "^2.0 || ^3.0",
+        "joomla/di": "^2.0 || ^3.0"
     },
     "autoload": {
         "classmap": [

@@ -16,6 +16,7 @@ use Joomla\CMS\Plugin\CMSPlugin;
 use Joomla\CMS\Table\Content;
 use Joomla\CMS\Uri\Uri;
 use Joomla\Database\DatabaseDriver;
+use Joomla\Database\DatabaseInterface;
 use Joomla\Registry\Registry;
 
 defined('_JEXEC') or die;
@@ -71,8 +72,9 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 */
 	public function onContentPrepareForm(Form $form): bool
 	{
-		$option = $this->app->input->get('option');
-		$client = $this->app->getName();
+		$app    = $this->getApp();
+		$option = $app->getInput()->get('option');
+		$client = $app->getName();
 
 		$whereToRun = $this->params->get('whereToRun', 'both');
 		if (($whereToRun === 'administrator' || $whereToRun === 'site')
@@ -112,7 +114,14 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 */
 	public function onBeforeCompileHead(): bool
 	{
-		$input  = $this->app->input;
+		$app = $this->getApp();
+
+		if (!$app->isClient('site'))
+		{
+			return true;
+		}
+
+		$input  = $app->getInput();
 		$option = $input->get('option', '', 'cmd');
 		$view   = $input->get('view', '', 'cmd');
 
@@ -126,23 +135,16 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			return true;
 		}
 
-		$uniqueArticle = true;
-		if(is_array($input->get('id', 0, 'int'))){
-			$uniqueArticle = false;
-		}
-
-		if (!$this->app->isClient('site'))
-		{
-			return true;
-		}
-
 		/** @var \Joomla\CMS\Document\Document $document */
-		$document       = $this->app->getDocument();
+		$document = $app->getDocument();
 
-		if($uniqueArticle) {
-			$article        = $this->getArticle($input->get('id', 0, 'int'));
-		} else {
-			$article        = false;
+		// Only a single article view of com_content carries article data. Any other "id" in the
+		// request (categories, contacts, other components) must not load an article.
+		$article = null;
+
+		if ($option === 'com_content' && $view === 'article' && !is_array($input->get('id', 0, 'raw')))
+		{
+			$article = $this->getArticle($input->getInt('id', 0));
 		}
 
 		$menuParams     = $this->getMenuParams();
@@ -155,10 +157,11 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		$this->addTitleFallback($this->params, $articleAttribs, $menuParams, $document);
 		$this->addDescriptionFallback($this->params, $menuParams, $document, $view);
 
-		if($uniqueArticle) {
+		if ($article !== null)
+		{
 			$this->addPublishedFallback($this->params, $article);
 		}
-		
+
 		$this->injectOpenGraphData($document, $this->params);
 
 		return true;
@@ -196,28 +199,25 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			'tw_creator'
 		);
 
-		$config = Factory::getConfig();
-
-		if ($config === null)
-		{
-			throw new \RuntimeException('Unable to load global configuration');
-		}
-
-		$params->set('sitename', $config->get('sitename'));
+		$params->set('sitename', $this->getApp()->get('sitename'));
 		$params->set('base_url', Uri::base());
-		$params->set('url', Uri::getInstance());
+		// Canonical URL without the query string, so tracking or arbitrary parameters do not end up in og:url
+		$params->set('url', Uri::current());
+
+		// "menu" (default, behaviour of all earlier versions): menu item before article.
+		// "article": article before menu item. Plugin parameters are always the last fallback.
+		[$first, $second] = $params->get('priority', 'menu') === 'article'
+			? [$articleAttribs, $menuParams]
+			: [$menuParams, $articleAttribs];
 
 		foreach ($settings as $setting)
 		{
 			$params->set(
 				$setting,
-				// Priority A - Menu parameters
-				$menuParams->get(
+				$first->get(
 					$setting,
-					// Priority B - Article parameters
-					$articleAttribs->get(
+					$second->get(
 						$setting,
-						// Priority C - Module parameters
 						$params->get(
 							$setting,
 							''
@@ -260,7 +260,17 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		}
 		else
 		{
-			[$image, $alt] = $this->getArticleImage($articleImages);
+			[$articleImage, $articleAlt] = $this->getArticleImage($articleImages);
+
+			if ($articleImage > '')
+			{
+				[$image, $alt] = [$articleImage, $articleAlt];
+			}
+			else
+			{
+				// Last fallback: the general image, so pages without an own image still get one
+				$image = (string) $params->get('og_image', '');
+			}
 		}
 
 		$params->set('og_image', $image);
@@ -316,23 +326,86 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 */
 	private function addPublishedFallback(Registry $params, Content $article): void
 	{
-		$params->def('og_article_published_time', $article->created ?? '');
+		$created = $article->publish_up ?: ($article->created ?? '');
+
+		// Open Graph expects ISO 8601
+		$params->def('og_article_published_time', $created ? Factory::getDate($created)->toISO8601() : '');
 	}
 
 	/**
-	 * Get the article with the given ID
+	 * Get the article with the given ID, but only if the current visitor may see it
 	 *
 	 * @param   int  $id
 	 *
-	 * @return \Joomla\CMS\Table\Content
+	 * @return \Joomla\CMS\Table\Content|null  Null if the article does not exist, is not published or not accessible
 	 * @since  2.0.0
 	 */
-	private function getArticle(int $id): Content
+	private function getArticle(int $id): ?Content
 	{
-		$article = new Content($this->db);
-		$article->load($id);
+		if ($id <= 0)
+		{
+			return null;
+		}
+
+		$article = new Content($this->getDb());
+
+		if (!$article->load($id) || (int) $article->state !== 1)
+		{
+			return null;
+		}
+
+		$user = $this->getApp()->getIdentity();
+
+		if ($user === null || !\in_array((int) $article->access, array_map('intval', $user->getAuthorisedViewLevels()), true))
+		{
+			return null;
+		}
+
+		$now = Factory::getDate()->toUnix();
+
+		if (!empty($article->publish_up) && Factory::getDate($article->publish_up)->toUnix() > $now)
+		{
+			return null;
+		}
+
+		if (!empty($article->publish_down) && Factory::getDate($article->publish_down)->toUnix() <= $now)
+		{
+			return null;
+		}
 
 		return $article;
+	}
+
+	/**
+	 * The application, without relying on the deprecated property injection of CMSPlugin
+	 *
+	 * @return \Joomla\CMS\Application\CMSApplication
+	 * @since  2.1.0
+	 */
+	private function getApp()
+	{
+		if ($this->app !== null)
+		{
+			return $this->app;
+		}
+
+		if (method_exists($this, 'getApplication') && $this->getApplication() !== null)
+		{
+			return $this->getApplication();
+		}
+
+		return Factory::getApplication();
+	}
+
+	/**
+	 * The database, without relying on the deprecated property injection of CMSPlugin
+	 *
+	 * @return \Joomla\Database\DatabaseInterface
+	 * @since  2.1.0
+	 */
+	private function getDb()
+	{
+		return $this->db ?? Factory::getContainer()->get(DatabaseInterface::class);
 	}
 
 	/**
@@ -435,12 +508,8 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		];
 
 		$bot       = self::NONE;
-		$useragent = null;
-
-		if ($_SERVER['HTTP_USER_AGENT'])
-		{
-			$useragent = $_SERVER['HTTP_USER_AGENT'];
-		}
+		$app       = $this->getApp();
+		$useragent = $app->client->userAgent ?? ($_SERVER['HTTP_USER_AGENT'] ?? '');
 
 		if (!empty($useragent))
 		{
@@ -458,7 +527,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 
 			if ($bot === self::FACEBOOK)
 			{
-				$this->app->set('gzip', 0);
+				$app->set('gzip', 0);
 			}
 		}
 
@@ -473,7 +542,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 	 */
 	private function getMenuParams(): Registry
 	{
-		$menu   = $this->app->getMenu();
+		$menu   = $this->getApp()->getMenu();
 
 		if ($menu === null)
 		{
@@ -514,9 +583,13 @@ class plgSystemCccsocialmedia extends CMSPlugin
 			return;
 		}
 
-		$image = preg_replace('~^([\w\-./\\\]+).*$~', '$1', $image);
+		$image = ltrim(preg_replace('~^([\w\-./\\\]+).*$~', '$1', $image), '/');
 
-		if (!file_exists($image))
+		// Resolve the file inside the site root only, never outside of it
+		$root = realpath(\defined('JPATH_ROOT') ? JPATH_ROOT : getcwd());
+		$file = realpath($root . '/' . $image);
+
+		if ($root === false || $file === false || strpos($file, $root . DIRECTORY_SEPARATOR) !== 0 || !is_file($file))
 		{
 			return;
 		}
@@ -524,23 +597,26 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		$url = empty($baseUrl) ? '' : rtrim($baseUrl, '/') . '/';
 		$url .= $image;
 
-		if (empty($document->getMetaData('og:image', 'property')))
-		{
-			$this->setMetaData($document, 'og:image', $url, 'property');
-			$this->setMetaData($document, 'og:image:secure_url', $url, 'property');
-			$this->setMetaData($document, 'og:image:alt', $alt, 'property');
-		}
-		
 		$this->setMetaDataIfNotSet($document, 'twitter:image', $url, 'name');
 		$this->setMetaDataIfNotSet($document, 'twitter:image:alt', $alt, 'name');
 
-		$info = getimagesize($image);
+		// Another extension already set an og:image: keep it, and do not add type or size of a different image
+		if (!empty($document->getMetaData('og:image', 'property')))
+		{
+			return;
+		}
+
+		$this->setMetaData($document, 'og:image', $url, 'property');
+		$this->setMetaData($document, 'og:image:secure_url', $url, 'property');
+		$this->setMetaData($document, 'og:image:alt', $alt, 'property');
+
+		$info = getimagesize($file);
 
 		if (\is_array($info))
 		{
 			$this->setMetaData($document, 'og:image:type', $info['mime'], 'property');
-			$this->setMetaData($document, 'og:image:height', $info[1]);
-			$this->setMetaData($document, 'og:image:width', $info[0]);
+			$this->setMetaData($document, 'og:image:height', (string) $info[1], 'property');
+			$this->setMetaData($document, 'og:image:width', (string) $info[0], 'property');
 		}
 	}
 
@@ -651,8 +727,8 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		$this->setProduct(
 			$document,
 			$params->get('og_type'),
-			$params->get('og_product_price'),
-			$params->get('og_product_currency'),
+			$params->get('og_product_price_amount'),
+			$params->get('og_product_price_currency'),
 			$params->get('og_product_availability')
 		);
 	}
