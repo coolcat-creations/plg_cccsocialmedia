@@ -524,9 +524,13 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		$url = empty($baseUrl) ? '' : rtrim($baseUrl, '/') . '/';
 		$url .= $image;
 
-		$this->setMetaData($document, 'og:image', $url, 'property');
-		$this->setMetaData($document, 'og:image:secure_url', $url, 'property');
-		$this->setMetaData($document, 'og:image:alt', $alt, 'property');
+		if (empty($document->getMetaData('og:image', 'property')))
+		{
+			$this->setMetaData($document, 'og:image', $url, 'property');
+			$this->setMetaData($document, 'og:image:secure_url', $url, 'property');
+			$this->setMetaData($document, 'og:image:alt', $alt, 'property');
+		}
+		
 		$this->setMetaDataIfNotSet($document, 'twitter:image', $url, 'name');
 		$this->setMetaDataIfNotSet($document, 'twitter:image:alt', $alt, 'name');
 
@@ -582,7 +586,7 @@ class plgSystemCccsocialmedia extends CMSPlugin
 		?string $value = '',
 		string $attribute = 'name'
 	): void {
-		if (!empty($value) && empty($document->getMetaData($key)))
+		if (!empty($value) && empty($document->getMetaData($key, $attribute)))
 		{
 			$this->setMetaData($document, $key, $value, $attribute);
 		}
